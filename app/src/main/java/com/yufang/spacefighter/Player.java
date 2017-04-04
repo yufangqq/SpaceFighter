@@ -5,6 +5,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
 public class Player {
     private Bitmap bitmap;
     private int x;
@@ -20,11 +25,40 @@ public class Player {
 
     private Rect detectCollision;
 
+    /* (1) Invalid/Encrypted png file seems to cause issue if you put it under drawable
+       (2) Try to BitmapFactory.decodeByteArray from an invalid/encrypted file. You will get
+        caused by: java.lang.NullPointerException: Attempt to invoke virtual method 'int android.graphics.Bitmap.getHeight()' on a null object reference
+     */
     public Player(Context context, int screenX, int screenY) {
         x = 75;
         y = 50;
         speed = 1;
+        // bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.player);
+
+        // "player_encrypted" cause fatal
+        // "player_decrypted"
+        InputStream ins = context.getResources().openRawResource(
+                context.getResources().getIdentifier("player_decrypted",
+                        "raw", context.getPackageName()));
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        int data = 0;
+        int size = 0;
+        try {
+            data = ins.read(); // read first byte
+            while (data != -1)
+            {
+                size=size + 1;
+                byteArrayOutputStream.write(data);
+                data = ins.read(); // read next byte
+            }
+            ins.close();
+        } catch (IOException e) {
+            return;
+        }
+        System.out.println("size: " + size);
+        bitmap = BitmapFactory.decodeByteArray(byteArrayOutputStream.toByteArray(),0,size);
         bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.player);
+
         maxY = screenY - bitmap.getHeight();
         minY = 0;
         boosting = false;
