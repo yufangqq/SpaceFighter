@@ -1,9 +1,12 @@
 package com.yufang.spacefighter;
 
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
+
+import com.yufang.spacefighter.crypto.Crypto;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -25,6 +28,8 @@ public class Player {
 
     private Rect detectCollision;
 
+    private Crypto mCrypto = new Crypto();
+
     /* (1) Invalid/Encrypted png file seems to cause issue if you put it under drawable
        (2) Try to BitmapFactory.decodeByteArray from an invalid/encrypted file. You will get
         caused by: java.lang.NullPointerException: Attempt to invoke virtual method 'int android.graphics.Bitmap.getHeight()' on a null object reference
@@ -37,6 +42,7 @@ public class Player {
 
         // "player_encrypted" cause fatal
         // "player_decrypted"
+/*
         InputStream ins = context.getResources().openRawResource(
                 context.getResources().getIdentifier("player_decrypted",
                         "raw", context.getPackageName()));
@@ -56,8 +62,22 @@ public class Player {
             return;
         }
         System.out.println("size: " + size);
-        bitmap = BitmapFactory.decodeByteArray(byteArrayOutputStream.toByteArray(),0,size);
-        bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.player);
+*/
+        // Someone bitmap created from decodeByteArray() is smaller than decodeResource().
+        // bitmap = BitmapFactory.decodeByteArray(byteArrayOutputStream.toByteArray(),0,size);
+        // bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.player);
+
+        ///*
+// DRM!!!!
+        AssetFileDescriptor afd = context.getResources().openRawResourceFd(R.raw.player_enc);
+        mCrypto.init();
+        bitmap = BitmapFactory.decodeByteArray(
+                mCrypto.decryptResource(
+                        context,
+                        context.getResources().openRawResource(R.raw.player_enc), afd.getLength()),
+                0, mCrypto.getDataLength());
+// DRM!!!!
+        //*/
 
         maxY = screenY - bitmap.getHeight();
         minY = 0;
